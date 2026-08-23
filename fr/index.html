@@ -279,7 +279,8 @@
       <span class="ghost-frag fragment" id="fg-grid" data-fragment-index="0"></span>
       <span class="ghost-frag fragment" id="fg-v1"   data-fragment-index="1"></span>
       <span class="ghost-frag fragment" id="fg-v2"   data-fragment-index="2"></span>
-      <span class="ghost-frag fragment" id="fg-ann"  data-fragment-index="3"></span>
+      <span class="ghost-frag fragment" id="fg-v3"   data-fragment-index="3"></span>
+      <span class="ghost-frag fragment" id="fg-ann"  data-fragment-index="4"></span>
     </section>
 
 
@@ -591,19 +592,16 @@ const M  = { top: 96, right: 148, bottom: 82, left: 88 };
 const CW = VW - M.left - M.right;
 const CH = VH - M.top  - M.bottom;
 
-const QTS = [
-  '2019 T1','2019 T2','2019 T3','2019 T4',
-  '2020 T1','2020 T2','2020 T3','2020 T4',
-  '2021 T1','2021 T2','2021 T3','2021 T4',
-  '2022 T1','2022 T2','2022 T3','2022 T4',
-];
-const V1 = [100, 77, 128, 97,  89, 17, 97, 59,  73, 51, 121, 75,  96, 86, 138, 104];
-const V2 = [100, 77, 128, 97,  89, 17, 97, 59,  73, 51, 121, 75,  99, 90, 143, 109];
-const D1 = QTS.map((q, i) => ({ q, v: V1[i] }));
-const D2 = QTS.map((q, i) => ({ q, v: V2[i] }));
+const QTS = ["2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023"];
+const V1 = [34574, 35999, 37427, 35606, 36210, 35603, 34616, 35494, 35816, 35776, 35540, 37116, 38659, 39355, 40080, 40980, null, null];
+const V2 = [34473, 35900, 37335, 35529, 36124, 35591, 34616, 35494, 35816, 35776, 35540, 37116, 38659, 39379, 27013, 38454, null, null];
+const V3 = [34473, 35900, 37335, 35529, 36124, 35591, 34616, 35494, 35816, 35776, 35540, 37116, 38659, 39379, 26357, 27287, 35254, 38409];
+const D1 = QTS.map((q, i) => ({ q, v: V1[i] })).filter(d => d.v != null);
+const D2 = QTS.map((q, i) => ({ q, v: V2[i] })).filter(d => d.v != null);
+const D3 = QTS.map((q, i) => ({ q, v: V3[i] }));
 
 const xScale = d3.scalePoint().domain(QTS).range([0, CW]).padding(0.12);
-const yScale = d3.scaleLinear().domain([0, 160]).range([CH, 0]);
+const yScale = d3.scaleLinear().domain([20000, 44000]).range([CH, 0]);
 const lineFn = d3.line()
   .x(d => xScale(d.q))
   .y(d => yScale(d.v))
@@ -626,6 +624,13 @@ const fmI = glowI.append('feMerge');
 fmI.append('feMergeNode').attr('in', 'cb');
 fmI.append('feMergeNode').attr('in', 'SourceGraphic');
 
+const glowC = defs.append('filter').attr('id', 'glow-cyan')
+  .attr('x', '-30%').attr('y', '-30%').attr('width', '160%').attr('height', '160%');
+glowC.append('feGaussianBlur').attr('stdDeviation', '5').attr('result', 'cb');
+const fmC = glowC.append('feMerge');
+fmC.append('feMergeNode').attr('in', 'cb');
+fmC.append('feMergeNode').attr('in', 'SourceGraphic');
+
 const G = {
   grid:  svg.append('g').attr('id', 'g-grid'),
   title: svg.append('g').attr('id', 'g-title'),
@@ -640,6 +645,7 @@ const GRID_LINE = 'rgba(148,163,184,.10)';
 const TITLE_TXT = 'rgba(241,245,249,.55)';
 const AMBER     = '#f59e0b';
 const INDIGO    = '#818cf8';
+const CYAN      = '#22d3ee';
 
 function animatePath(parent, data, color, glowId, duration = 1800, delay = 0) {
   const path = parent.append('path')
@@ -666,21 +672,21 @@ function addDots(parent, data, color, delay = 1900) {
 
 function drawGrid() {
   const g = G.grid;
-  const yTicks = [0, 25, 50, 75, 100, 125, 150];
+  const yTicks = [22000, 26000, 30000, 34000, 38000, 42000];
   yTicks.forEach((t, i) => {
     const yy = M.top + yScale(t);
-    const isBase = t === 100;
+    const isPandemic = t === 26000;
     g.append('line')
       .attr('x1', M.left).attr('y1', yy).attr('x2', M.left).attr('y2', yy)
-      .attr('stroke', isBase ? 'rgba(129,140,248,.35)' : GRID_LINE)
-      .attr('stroke-width', isBase ? 1.2 : 1)
-      .attr('stroke-dasharray', isBase ? 'none' : '4,4')
+      .attr('stroke', isPandemic ? 'rgba(239,68,68,.30)' : GRID_LINE)
+      .attr('stroke-width', isPandemic ? 1.2 : 1)
+      .attr('stroke-dasharray', '4,4')
       .transition().delay(i * 55).duration(380).attr('x2', M.left + CW);
     g.append('text')
       .attr('x', M.left - 14).attr('y', yy + 4).attr('text-anchor', 'end')
-      .attr('fill', isBase ? 'rgba(129,140,248,.85)' : AXIS_TXT)
+      .attr('fill', isPandemic ? 'rgba(239,68,68,.75)' : AXIS_TXT)
       .attr('font-size', '11px').attr('font-family', MONO)
-      .style('opacity', 0).text(t)
+      .style('opacity', 0).text((t / 1000) + 'k')
       .transition().delay(i * 55 + 200).duration(250).style('opacity', 1);
   });
   g.append('line')
@@ -705,14 +711,14 @@ function drawGrid() {
     .attr('x', -(M.top + CH / 2)).attr('y', M.left - 58)
     .attr('text-anchor', 'middle').attr('fill', AXIS_TXT)
     .attr('font-size', '10px').attr('font-family', MONO)
-    .style('opacity', 0).text('Indice (2019 T1 = 100)')
+    .style('opacity', 0).text('Nuitées (milliers)')
     .transition().delay(600).duration(300).style('opacity', 1);
   G.title.append('text')
     .attr('x', M.left).attr('y', 52)
     .attr('fill', TITLE_TXT).attr('font-size', '11px')
     .attr('font-family', MONO).attr('letter-spacing', '.12em')
     .style('opacity', 0)
-    .text('ENQUÊTE KOF TOURISME  ·  NUITÉES  ·  SUISSE')
+    .text('PRÉVISION KOF TOURISME  ·  NUITÉES  ·  SUISSE')
     .transition().delay(700).duration(350).style('opacity', 1);
 }
 
@@ -720,15 +726,15 @@ function drawV1() {
   const g = G.chart.append('g').attr('id', 'g-v1');
   animatePath(g, D1, AMBER, 'glow-amber');
   addDots(g, D1, AMBER);
-  const lx = M.left + CW + 20, ly = M.top + 16;
+  const lx = M.left + CW - 100, ly = M.top + 366;
   const lg = G.lgd.append('g').attr('id', 'lgd-v1').style('opacity', 0);
   lg.append('line').attr('x1', lx).attr('y1', ly + 7).attr('x2', lx + 26).attr('y2', ly + 7)
     .attr('stroke', AMBER).attr('stroke-width', 2.5);
   lg.append('circle').attr('cx', lx + 13).attr('cy', ly + 7).attr('r', 4).attr('fill', AMBER);
   lg.append('text').attr('x', lx + 34).attr('y', ly + 11)
-    .attr('fill', '#cbd5e1').attr('font-size', '11px').attr('font-family', MONO).text('Vintage 1');
+    .attr('fill', '#cbd5e1').attr('font-size', '11px').attr('font-family', MONO).text('Vintage oct. 2019');
   lg.append('text').attr('x', lx + 34).attr('y', ly + 26)
-    .attr('fill', '#64748b').attr('font-size', '10px').attr('font-family', MONO).text('Publication fév. 2023');
+    .attr('fill', '#64748b').attr('font-size', '10px').attr('font-family', MONO).text('prévision pré-pandémie');
   lg.transition().delay(900).duration(400).style('opacity', 1);
 }
 
@@ -736,56 +742,58 @@ function drawV2() {
   const g = G.chart.append('g').attr('id', 'g-v2');
   animatePath(g, D2, INDIGO, 'glow-indigo');
   addDots(g, D2, INDIGO);
-  const lx = M.left + CW + 20, ly = M.top + 60;
+  const lx = M.left + CW - 100, ly = M.top + 410;
   const lg = G.lgd.append('g').attr('id', 'lgd-v2').style('opacity', 0);
   lg.append('line').attr('x1', lx).attr('y1', ly + 7).attr('x2', lx + 26).attr('y2', ly + 7)
     .attr('stroke', INDIGO).attr('stroke-width', 2.5);
   lg.append('circle').attr('cx', lx + 13).attr('cy', ly + 7).attr('r', 4).attr('fill', INDIGO);
   lg.append('text').attr('x', lx + 34).attr('y', ly + 11)
-    .attr('fill', '#cbd5e1').attr('font-size', '11px').attr('font-family', MONO).text('Vintage 2');
+    .attr('fill', '#cbd5e1').attr('font-size', '11px').attr('font-family', MONO).text('Vintage juin 2020');
   lg.append('text').attr('x', lx + 34).attr('y', ly + 26)
-    .attr('fill', '#64748b').attr('font-size', '10px').attr('font-family', MONO).text('Publication août 2023');
+    .attr('fill', '#64748b').attr('font-size', '10px').attr('font-family', MONO).text('le choc de la pandémie');
+  lg.transition().delay(900).duration(400).style('opacity', 1);
+}
+
+function drawV3() {
+  const g = G.chart.append('g').attr('id', 'g-v3');
+  animatePath(g, D3, CYAN, 'glow-cyan');
+  addDots(g, D3, CYAN);
+  const lx = M.left + CW - 100, ly = M.top + 454;
+  const lg = G.lgd.append('g').attr('id', 'lgd-v3').style('opacity', 0);
+  lg.append('line').attr('x1', lx).attr('y1', ly + 7).attr('x2', lx + 26).attr('y2', ly + 7)
+    .attr('stroke', CYAN).attr('stroke-width', 2.5);
+  lg.append('circle').attr('cx', lx + 13).attr('cy', ly + 7).attr('r', 4).attr('fill', CYAN);
+  lg.append('text').attr('x', lx + 34).attr('y', ly + 11)
+    .attr('fill', '#cbd5e1').attr('font-size', '11px').attr('font-family', MONO).text('Vintage déc. 2021');
+  lg.append('text').attr('x', lx + 34).attr('y', ly + 26)
+    .attr('fill', '#64748b').attr('font-size', '10px').attr('font-family', MONO).text('pandémie plus longue');
   lg.transition().delay(900).duration(400).style('opacity', 1);
 }
 
 function drawAnnotation() {
   const g = G.chart.append('g').attr('id', 'g-ann').style('opacity', 0);
   g.transition().duration(300).style('opacity', 1);
-  const x0 = xScale('2022 T1') - 18;
-  const x1 = xScale('2022 T4') + 18;
+  const x0 = xScale('2020') - 18;
+  const x1 = xScale('2021') + 18;
   g.append('rect')
     .attr('x', x0).attr('y', 0).attr('width', x1 - x0).attr('height', CH)
-    .attr('fill', 'rgba(129,140,248,.05)').attr('stroke', 'rgba(129,140,248,.18)').attr('rx', 8);
-  const midX = (x0 + x1) / 2;
-  const annY  = yScale(48);
-  g.append('rect')
-    .attr('x', midX - 150).attr('y', annY - 90).attr('width', 300).attr('height', 56)
-    .attr('rx', 8).attr('fill', 'rgba(19,24,41,.9)').attr('stroke', 'rgba(148,163,184,.20)');
-  g.append('text')
-    .attr('x', midX).attr('y', annY - 62).attr('text-anchor', 'middle')
-    .attr('fill', '#f1f5f9').attr('font-size', '11.5px').attr('font-family', MONO)
-    .attr('font-weight', 700).attr('letter-spacing', '.1em').text('ZONE DE RÉVISION');
-  g.append('text')
-    .attr('x', midX).attr('y', annY - 44).attr('text-anchor', 'middle')
-    .attr('fill', '#94a3b8').attr('font-size', '10px').attr('font-family', MONO)
-    .text('Données 2022 mises à jour août 2023 → +3 à +5 pts');
-  const revQts = ['2022 T1','2022 T2','2022 T3','2022 T4'];
-  revQts.forEach((q, i) => {
-    const idx = QTS.indexOf(q);
-    const xv  = xScale(q);
+    .attr('fill', 'rgba(239,68,68,.05)').attr('stroke', 'rgba(239,68,68,.20)').attr('rx', 8);
+  ['2020', '2021'].forEach((yr, i) => {
+    const idx = QTS.indexOf(yr);
+    const xv  = xScale(yr);
     const y1v = yScale(V1[idx]);
-    const y2v = yScale(V2[idx]);
+    const y3v = yScale(V3[idx]);
     g.append('line')
       .attr('x1', xv).attr('y1', y1v).attr('x2', xv).attr('y2', y1v)
       .attr('stroke', '#e2e8f0').attr('stroke-width', 1.5)
-      .attr('stroke-dasharray', '3,3').attr('opacity', 0.45)
-      .transition().delay(350 + i * 90).duration(280).attr('y2', y2v);
+      .attr('stroke-dasharray', '3,3').attr('opacity', 0.50)
+      .transition().delay(350 + i * 120).duration(320).attr('y2', y3v);
   });
   G.title.select('.watermark').remove();
   G.title.append('text').attr('class', 'watermark')
     .attr('x', VW - 24).attr('y', VH - 20).attr('text-anchor', 'end')
     .attr('fill', 'rgba(148,163,184,.35)').attr('font-size', '10px').attr('font-family', MONO)
-    .text('opentsi · les vintages comptent')
+    .text('opentsi · les révisions comptent')
     .style('opacity', 0).transition().delay(500).duration(400).style('opacity', 1);
 }
 
@@ -794,6 +802,7 @@ Reveal.on('fragmentshown', event => {
   if (id === 'fg-grid') drawGrid();
   if (id === 'fg-v1')   drawV1();
   if (id === 'fg-v2')   drawV2();
+  if (id === 'fg-v3')   drawV3();
   if (id === 'fg-ann')  drawAnnotation();
 });
 
@@ -806,6 +815,7 @@ Reveal.on('fragmenthidden', event => {
     });
   }
   if (id === 'fg-ann') { fadeRemove(G.chart.select('#g-ann')); G.title.select('.watermark').remove(); }
+  if (id === 'fg-v3')  { fadeRemove(G.chart.select('#g-v3')); fadeRemove(G.lgd.select('#lgd-v3')); }
   if (id === 'fg-v2')  { fadeRemove(G.chart.select('#g-v2')); fadeRemove(G.lgd.select('#lgd-v2')); }
   if (id === 'fg-v1')  { fadeRemove(G.chart.select('#g-v1')); fadeRemove(G.lgd.select('#lgd-v1')); }
   if (id === 'fg-grid') {
